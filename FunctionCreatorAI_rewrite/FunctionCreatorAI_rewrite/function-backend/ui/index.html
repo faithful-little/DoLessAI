@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Function Backend</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <header class="topbar">
+        <div>
+            <h1>Function Backend</h1>
+            <p>BM25 + embedding hybrid retrieval for extension functions.</p>
+        </div>
+        <div class="status-block">
+            <span id="healthBadge" class="badge unknown">Checking</span>
+            <button id="refreshBtn" type="button">Refresh</button>
+        </div>
+    </header>
+
+    <main class="layout">
+        <section class="panel">
+            <h2>Search</h2>
+            <form id="searchForm">
+                <label>
+                    Query
+                    <input id="queryInput" type="text" placeholder="e.g. scrape amazon prices">
+                </label>
+                <label>
+                    Current URL (optional)
+                    <input id="urlInput" type="text" placeholder="https://www.amazon.com/s?k=keyboard">
+                </label>
+                <label>
+                    Top K
+                    <input id="topKInput" type="number" min="1" max="30" value="8">
+                </label>
+                <label>
+                    Query embedding (optional JSON array)
+                    <textarea id="embeddingInput" rows="4" placeholder="[0.0123, -0.002, ...]"></textarea>
+                </label>
+                <button id="searchBtn" type="submit">Run Search</button>
+            </form>
+            <div id="searchMeta" class="muted">No search executed yet.</div>
+            <div id="searchResults" class="list"></div>
+        </section>
+
+        <section class="panel">
+            <h2>Stored Functions</h2>
+            <div id="stats" class="stats-grid"></div>
+            <div id="functionsList" class="list"></div>
+        </section>
+    </main>
+
+    <template id="resultItemTemplate">
+        <article class="item">
+            <div class="item-head">
+                <h3 class="item-title"></h3>
+                <span class="item-score"></span>
+            </div>
+            <p class="item-desc"></p>
+            <div class="chips"></div>
+            <details>
+                <summary>View details</summary>
+                <pre class="json"></pre>
+            </details>
+        </article>
+    </template>
+
+    <script src="./app.js"></script>
+</body>
+</html>

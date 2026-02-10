@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Task Automator Pro</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="ui/style.css">
+</head>
+
+<body>
+  <div class="settings-header">
+    <button id="settingsToggle" title="Settings">⚙️</button>
+  </div>
+
+  <div id="settingsPanel" class="settings-panel">
+    <div class="settings-item">
+      <label for="geminiApiKey">Gemini API Key:</label>
+      <input type="password" id="geminiApiKey" placeholder="Enter your Gemini API key...">
+      <button id="toggleApiKeyVisibility" class="toggle-visibility-btn" title="Show/Hide">👁️</button>
+    </div>
+    <div class="settings-item">
+      <label for="retryCountSelect">AI Retry Count:</label>
+      <select id="retryCountSelect">
+        <option value="1">1 attempt</option>
+        <option value="2">2 attempts</option>
+        <option value="3" selected>3 attempts (default)</option>
+        <option value="4">4 attempts</option>
+        <option value="5">5 attempts</option>
+      </select>
+    </div>
+    <div class="settings-item">
+      <label for="thinkingLevelSelect">AI Thinking Level:</label>
+      <select id="thinkingLevelSelect">
+        <option value="NONE">None (Fastest)</option>
+        <option value="LOW">Low</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="HIGH" selected>High (Best Quality)</option>
+      </select>
+    </div>
+    <div class="settings-item">
+      <label for="audioDeviceSelect">Microphone:</label>
+      <select id="audioDeviceSelect">
+        <option value="">Default Microphone</option>
+      </select>
+    </div>
+    <div class="settings-item checkbox-item">
+      <label>
+        <input type="checkbox" id="showTestsForeground">
+        Show tests in foreground window
+      </label>
+    </div>
+    <div class="settings-item">
+      <label for="computerUseMaxActions">Computer Use Max Actions:</label>
+      <input type="number" id="computerUseMaxActions" min="1" max="500" step="1" value="50">
+    </div>
+    <div class="settings-item checkbox-item">
+      <label>
+        <input type="checkbox" id="enableProactiveExploration">
+        AI page exploration before scraping (slower, more accurate)
+      </label>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-section-label">Local AI (Ollama)</div>
+    <div class="settings-item">
+      <label for="ollamaUrl">Ollama URL:</label>
+      <div class="ollama-url-row">
+        <input type="text" id="ollamaUrl" placeholder="http://localhost:11434" value="http://localhost:11434">
+        <span id="ollamaStatus" class="ollama-status" title="Checking...">--</span>
+      </div>
+    </div>
+    <div class="settings-item">
+      <label for="ollamaModel">Ollama Model:</label>
+      <select id="ollamaModel">
+        <option value="">Checking available models...</option>
+      </select>
+    </div>
+    <div class="settings-item">
+      <label for="embeddingEngine">Embedding Engine:</label>
+      <select id="embeddingEngine">
+        <option value="gemini" selected>Gemini (cloud)</option>
+        <option value="ollama">Ollama (local)</option>
+      </select>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-section-label">Function Backend</div>
+    <div class="settings-item checkbox-item">
+      <label>
+        <input type="checkbox" id="backendEnabled">
+        Use backend search/import for missing local functions
+      </label>
+    </div>
+    <div class="settings-item">
+      <label for="backendUrl">Backend URL:</label>
+      <div class="ollama-url-row">
+        <input type="text" id="backendUrl" placeholder="http://localhost:8787" value="http://localhost:8787">
+        <span id="backendStatus" class="ollama-status" title="Checking...">--</span>
+      </div>
+    </div>
+    <div class="settings-item checkbox-item">
+      <label>
+        <input type="checkbox" id="backendUploadEnabled">
+        Send tested + verified functions to backend (opt-in)
+      </label>
+    </div>
+  </div>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button id="recordModeTab" class="mode-tab active">🔴 Record</button>
+    <button id="playbackModeTab" class="mode-tab">▶️ Playback</button>
+    <button id="aiTaskModeTab" class="mode-tab">🧠 AI Task</button>
+    <button id="toolTestModeTab" class="mode-tab">🧪 Test</button>
+  </div>
+
+  <!-- Record Mode Content -->
+  <div id="recordModeContent">
+    <div class="controls">
+      <button id="recordButton">Start Recording</button>
+      <button id="recordLiteralButton">Start Literal Recording</button>
+    </div>
+
+    <div class="recording-section">
+      <h2>Current Recording</h2>
+      <div id="stepsContainer">No steps recorded yet.</div>
+      <div class="save-controls">
+        <input type="text" id="taskNameInput" placeholder="Enter task name...">
+        <textarea id="taskDescriptionInput" placeholder="Add a description..."></textarea>
+        <div class="save-buttons">
+          <button id="addScreenshotButton" title="Capture Visible Area" disabled>📸</button>
+          <button id="addFullPageScreenshotButton" title="Capture Full Page" disabled>📄</button>
+          <button id="addLargestTextButton" title="Capture Largest Text Block" disabled>📝</button>
+          <button id="addTextNoteButton" title="Add Text Note" disabled>🗒️</button>
+          <button id="saveTaskButton" disabled>Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="reference-functions-section" id="referenceFunctionsSection" style="display: none;">
+      <h3>📚 Additional Function References <span class="auto-included-note">(same-site functions auto-included)</span>
+      </h3>
+      <div id="referenceFunctionsList" class="reference-functions-list">
+        <!-- Shows only functions from OTHER sites, for optional cross-site references -->
+      </div>
+    </div>
+
+    <div class="live-actions-section">
+      <h2>Live Action</h2>
+      <div class="live-action-controls">
+        <input type="text" id="liveActionTextInput" placeholder="Enter text on page to click...">
+        <button id="liveActionClickButton">Click by Text</button>
+      </div>
+    </div>
+
+    <div class="tasks-section">
+      <h2>Saved Tasks (for this site)</h2>
+      <div id="tasksContainer">No tasks match the current site.</div>
+    </div>
+  </div>
+
+  <!-- Playback Mode Content -->
+  <div id="playbackModeContent" style="display: none;">
+    <div class="generate-section">
+      <h2>AI Function Generator</h2>
+      <p class="section-description">Generate reusable functions from your recordings using AI</p>
+      <div class="generate-controls">
+        <button id="generateFunctionBtn" class="generate-btn" disabled>🤖 Generate Function from Recording</button>
+      </div>
+      <div id="generationStatus" class="generation-status"></div>
+    </div>
+
+    <div class="smart-scrape-section">
+      <h2>Smart Scrape</h2>
+      <p class="section-description">AI analyzes the current page screenshot and creates extraction functions automatically</p>
+      <div class="smart-scrape-controls">
+        <button id="smartScrapeBtn" class="smart-scrape-btn" disabled>Smart Scrape This Page</button>
+      </div>
+      <div id="smartScrapeStatus" class="generation-status"></div>
+      <div id="smartScrapePreview" class="smart-scrape-preview" style="display: none;">
+        <h3>Extraction Preview</h3>
+        <div id="smartScrapeResult"></div>
+      </div>
+    </div>
+
+    <div class="functions-library-section">
+      <h2>Function Library</h2>
+      <div id="functionsContainer">No functions generated yet.</div>
+    </div>
+
+    <div class="function-test-section" style="display: none;">
+      <h2>Test Function</h2>
+      <div id="functionTestPanel">
+        <div id="testInputsContainer"></div>
+        <button id="runTestBtn" class="run-test-btn">▶️ Run Test</button>
+        <div id="testResultsContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Task Mode Content -->
+  <div id="aiTaskModeContent" style="display: none;">
+    <div class="ai-task-section">
+      <h2>AI Task Generator</h2>
+      <p class="section-description">Describe a task in natural language and AI will create a reusable automation function</p>
+
+      <div class="ai-task-input-area">
+        <textarea id="aiTaskDescription"
+          placeholder="Example: Get the top 10 search results from Flipkart for a given query, including title, price, rating, description, and image URL"
+          rows="4"></textarea>
+      </div>
+
+      <div class="ai-task-examples">
+        <div class="example-category-tabs">
+          <button class="example-cat-tab active" data-cat="scraping">Scraping</button>
+          <button class="example-cat-tab" data-cat="filter">Filter &amp; Analyze</button>
+          <button class="example-cat-tab" data-cat="output">Export &amp; Visuals</button>
+          <button class="example-cat-tab" data-cat="workflow">Multi-Page</button>
+          <button class="example-cat-tab" data-cat="modify">Page Control</button>
+          <button class="example-cat-tab" data-cat="monitor">Monitor &amp; State</button>
+        </div>
+
+        <!-- Scraping Examples -->
+        <div class="example-chips-panel active" data-cat="scraping">
+          <button class="example-chip" data-task="Search Amazon for 'wireless headphones' and extract the top 15 results with title, price, star rating, number of reviews, and product URL. Skip any sponsored results.">Amazon Product Search</button>
+          <button class="example-chip" data-task="Go to YouTube, search for a given query, and extract the top 10 video titles, channel names, view counts, upload dates, and video URLs from the search results page.">YouTube Search</button>
+          <button class="example-chip" data-task="Scrape the front page of Hacker News. For each of the top 20 stories, get the title, URL, points, author, time posted, and number of comments.">Hacker News Top 20</button>
+          <button class="example-chip" data-task="Go to Google Scholar, search for 'machine learning healthcare 2025', and extract the top 10 paper titles, authors, publication year, citation count, and abstract snippet.">Google Scholar Papers</button>
+          <button class="example-chip" data-task="Navigate to a given subreddit on Reddit and extract the top 15 posts including title, upvotes, comment count, author, post age, and permalink URL.">Reddit Subreddit Scrape</button>
+          <button class="example-chip" data-task="Search eBay for a given product query and extract the first 10 listings with item title, current price, shipping cost, seller name, seller rating percentage, and item URL.">eBay Listings</button>
+        </div>
+
+        <!-- Filter & Analyze Examples -->
+        <div class="example-chips-panel" data-cat="filter">
+          <button class="example-chip" data-task="Scrape Amazon laptop results for a search query. Use the local Ollama model to filter only items under $600 with rating above 4 stars. Save the filtered results as a CSV file.">Amazon Filter + CSV Export</button>
+          <button class="example-chip" data-task="Extract all article titles from the current news page. Use embeddings to find which articles are semantically similar to 'artificial intelligence breakthroughs' and rank them by relevance score.">Semantic Article Ranking</button>
+          <button class="example-chip" data-task="Scrape product reviews from this page. Use the local Ollama model to classify each review's sentiment as positive, negative, or neutral. Generate a summary dashboard showing the sentiment breakdown.">Review Sentiment Analysis</button>
+          <button class="example-chip" data-task="Extract the Terms of Service text from this page. Use the local Ollama to filter out generic sections. Then send only the privacy and data-related sections to Gemini for a detailed red-flag analysis. Show a safety summary.">TOS Privacy Analyzer</button>
+          <button class="example-chip" data-task="Scrape the top 20 job listings from this page with title, company, salary, and location. Use the local Ollama model to check each one: 'Is this a remote-friendly position?' Keep only remote jobs and save as JSON.">Remote Job Filter</button>
+          <button class="example-chip" data-task="Extract all product items from this page. Calculate a weighted score for each item: Rating (40% weight) vs Price (60% weight, lower is better). Sort by score and show the top 5 best-value items in a comparison table.">Weighted Value Scorer</button>
+        </div>
+
+        <!-- Export & Visual Examples -->
+        <div class="example-chips-panel" data-cat="output">
+          <button class="example-chip" data-task="Scrape the current page for structured data and save it as a downloadable CSV file with all fields auto-detected.">Quick CSV Export</button>
+          <button class="example-chip" data-task="Extract items from this page and generate a beautiful card-grid dashboard with images, titles, prices, and links. Open it in a new tab.">Card Grid Dashboard</button>
+          <button class="example-chip" data-task="Search 'Sony WH-1000XM5' on Amazon and Best Buy. Extract the price, rating, and availability from each site. Generate a side-by-side comparison table in a new tab.">Price Comparison Table</button>
+          <button class="example-chip" data-task="Scrape the top 10 trending repositories from GitHub. For each repo, get the name, description, stars, language, and URL. Export as a Markdown file with a formatted table.">GitHub Trends to Markdown</button>
+          <button class="example-chip" data-task="Extract the timeline of events from this Wikipedia article. Create a visual timeline page showing each event with its date and description in chronological order.">Wikipedia Timeline Builder</button>
+          <button class="example-chip" data-task="Scrape news headlines from this page. Use Gemini to write a 3-paragraph executive summary of today's top stories. Generate a clean summary report page and also download it as a Markdown file.">News Summary + Report</button>
+        </div>
+
+        <!-- Multi-Page Workflow Examples -->
+        <div class="example-chips-panel" data-cat="workflow">
+          <button class="example-chip" data-task="Search YouTube for a given query. Get the top 5 video URLs from the results page. Then visit each video page individually and extract the title, full description, view count, like count, channel name, and top 5 comments.">YouTube Deep Scrape</button>
+          <button class="example-chip" data-task="Search Amazon for 'mechanical keyboard'. Get the top 5 product links. Then visit each product page to extract the full title, all bullet-point features, price, rating breakdown (5-star to 1-star percentages), and Q&A section.">Amazon Product Details</button>
+          <button class="example-chip" data-task="Go to Hacker News, get the top 10 story URLs. Visit each linked article and extract the main article text, author, and publication date. Summarize each article in 2 sentences using AI.">HN Article Summarizer</button>
+          <button class="example-chip" data-task="Search for 'best restaurants in Tokyo' on Google. Get the top 5 restaurant links. Visit each restaurant's page and extract name, cuisine type, price range, rating, address, and opening hours. Generate a trip-planning card dashboard.">Restaurant Research</button>
+          <button class="example-chip" data-task="Go to a university scholarships page and extract all scholarship listings. For each scholarship, visit its detail page to get eligibility criteria, deadline, award amount, and application link. Filter only 'Engineering' scholarships using local Ollama. Save as JSON.">Scholarship Deep Collector</button>
+        </div>
+
+        <!-- Page Control Examples -->
+        <div class="example-chips-panel" data-cat="modify">
+          <button class="example-chip" data-task="Hide all sponsored content and advertisement elements on this page. Remove any elements with 'ad', 'sponsor', or 'promoted' in their class names or text content.">Remove Ads from Page</button>
+          <button class="example-chip" data-task="Scrape all video titles from the YouTube homepage. Use embeddings to check similarity against the topics 'politics' and 'celebrity gossip'. Hide any video containers whose titles are semantically related to those banned topics.">YouTube Feed Sanitizer</button>
+          <button class="example-chip" data-task="Find all product listings on this page. Highlight in green any items priced under $50. Highlight in red any items priced over $200. Leave everything else unchanged.">Price-Based Highlighter</button>
+          <button class="example-chip" data-task="Inject custom CSS into this page to increase font size by 20%, change the background to dark mode colors (dark gray background, light text), and hide the sidebar navigation.">Quick Dark Mode + Cleanup</button>
+          <button class="example-chip" data-task="Extract all links from this page. Filter to keep only links that contain 'download' or 'pdf' in their URL or text. Highlight those links in bright blue and hide all other non-navigation content on the page.">Download Link Finder</button>
+        </div>
+
+        <!-- Monitor & State Examples -->
+        <div class="example-chips-panel" data-cat="monitor">
+          <button class="example-chip" data-task="Scrape the current price of the product on this page. Save it to persistent storage with today's date as the key. Then load all previously saved prices and generate a timeline chart showing the price history over time.">Price History Tracker</button>
+          <button class="example-chip" data-task="Scrape current scholarship listings from this university page. Load the previously saved listings from persistent storage. Compare the two lists using the local Ollama model to identify any NEW scholarships related to 'Engineering'. Alert if new ones found.">Daily Scholarship Monitor</button>
+          <button class="example-chip" data-task="Scrape all sneaker listings from this page with name, price, and image URL. Check each price against a $100 threshold stored in the notepad. Generate an alert dashboard showing only the deals under $100 with their images.">Sneaker Price Alert</button>
+          <button class="example-chip" data-task="Extract job listings from this page. Save them to persistent storage. Next time this runs, compare with previously saved listings using embeddings to find truly new postings (not just reworded duplicates). Show only genuinely new jobs.">Smart Job Monitor</button>
+          <button class="example-chip" data-task="Scrape competitor product prices from this page. Write the data to the shared notepad. Read the notepad data to compare against our prices (stored in persistent state). Generate a comparison table highlighting where we're underpriced or overpriced.">Competitor Price Intel</button>
+        </div>
+      </div>
+
+      <div class="ai-task-controls">
+        <button id="aiTaskGenerateBtn" class="ai-task-generate-btn" disabled>🧠 Generate Function from Description</button>
+        <button id="aiTaskStopTestsSaveBtn" class="ai-task-stop-btn" disabled>Stop Tests &amp; Save</button>
+        <button id="aiTaskStopNowBtn" class="ai-task-stop-now-btn" disabled>Stop AI Now</button>
+      </div>
+
+      <div id="aiTaskStatus" class="generation-status"></div>
+
+      <div id="workflowProgress" class="workflow-progress" style="display: none;">
+        <div class="workflow-title">Workflow Generation</div>
+        <div class="workflow-overview" id="workflowOverview"></div>
+        <div class="sub-function-section">
+          <div class="sub-function-section-title">Sub-Functions</div>
+          <div id="subFunctionList" class="sub-function-list"></div>
+        </div>
+      </div>
+
+      <!-- Tool Chain Progress -->
+      <div id="toolChainProgress" class="tool-chain-progress" style="display: none;">
+        <div class="tool-chain-title">Tool Chain Execution</div>
+        <div id="toolChainSteps" class="tool-chain-steps"></div>
+      </div>
+    </div>
+
+    <div class="functions-library-section">
+      <h2>Function Library</h2>
+      <div id="aiTaskFunctionsContainer">No functions generated yet.</div>
+    </div>
+  </div>
+
+  <!-- Tool Testing Mode Content -->
+  <div id="toolTestModeContent" style="display: none;">
+    <h2 style="margin-bottom: 12px;">Tool & Action Testing</h2>
+
+    <!-- Test Output Area -->
+    <div class="tt-output-area">
+      <div class="tt-output-header">
+        <span>Output</span>
+        <div>
+          <button id="ttCopyOutput" class="secondary-btn" style="padding:1px 6px;font-size:11px;" title="Copy to clipboard">Copy</button>
+          <button id="ttClearOutput" class="secondary-btn" style="padding:1px 6px;font-size:11px;" title="Clear output">Clear</button>
+        </div>
+      </div>
+      <pre id="ttOutputPre" class="tt-output-pre">Run a test to see output here.</pre>
+    </div>
+
+    <!-- Navigation & Interaction -->
+    <details class="tt-group" open>
+      <summary>Navigation & Interaction</summary>
+      <div class="tt-row">
+        <label>Navigate</label>
+        <input id="tt-nav-url" placeholder="https://example.com" class="tt-input tt-wide" value="https://www.youtube.com">
+        <button class="tt-run" data-action="navigate">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Click</label>
+        <input id="tt-click-sel" placeholder="selector" class="tt-input tt-wide" value="input#search">
+        <button class="tt-run" data-action="click">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Type</label>
+        <input id="tt-type-sel" placeholder="selector" class="tt-input" value="input#search">
+        <input id="tt-type-val" placeholder="text to type" class="tt-input" value="lofi music">
+        <button class="tt-run" data-action="type">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Press Key</label>
+        <input id="tt-key-sel" placeholder="selector" class="tt-input" value="input#search">
+        <input id="tt-key-val" placeholder="Enter, Tab..." class="tt-input tt-sm" value="Enter">
+        <button class="tt-run" data-action="pressKey">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Scroll</label>
+        <input id="tt-scroll-amt" placeholder="pixels (e.g. 500)" type="number" class="tt-input tt-sm" value="500">
+        <button class="tt-run" data-action="scroll">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Wait</label>
+        <input id="tt-wait-val" placeholder="ms or selector" class="tt-input tt-wide" value="2000">
+        <button class="tt-run" data-action="wait">Run</button>
+      </div>
+    </details>
+
+    <!-- Data Extraction -->
+    <details class="tt-group">
+      <summary>Data Extraction</summary>
+      <div class="tt-row">
+        <label>Extract</label>
+        <input id="tt-extract-sel" placeholder="selector" class="tt-input" value="ytd-video-renderer #video-title">
+        <input id="tt-extract-pat" placeholder="pattern (optional)" class="tt-input tt-sm">
+        <button class="tt-run" data-action="extract">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Extract Attr</label>
+        <input id="tt-extattr-sel" placeholder="selector" class="tt-input" value="ytd-video-renderer #video-title">
+        <input id="tt-extattr-name" placeholder="href, src..." class="tt-input tt-sm" value="href">
+        <button class="tt-run" data-action="extractAttribute">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Get Elements</label>
+        <input id="tt-getels-sel" placeholder="selector" class="tt-input tt-wide" value="ytd-video-renderer #video-title">
+        <button class="tt-run" data-action="getElements">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Smart Scrape</label>
+        <input id="tt-scrape-desc" placeholder="description of data to extract" class="tt-input tt-wide" value="Extract the first 5 video titles and links from this page">
+        <button class="tt-run" data-action="smartScrape">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Exec Function</label>
+        <input id="tt-execfn-name" placeholder="function name" class="tt-input">
+        <input id="tt-execfn-inputs" placeholder='{"key":"val"}' class="tt-input">
+        <button class="tt-run" data-action="executeFunction">Run</button>
+      </div>
+    </details>
+
+    <!-- Memory -->
+    <details class="tt-group">
+      <summary>Memory (Notepad & Persistent)</summary>
+      <div class="tt-row">
+        <label>Write Notepad</label>
+        <input id="tt-np-wkey" placeholder="key" class="tt-input tt-sm" value="test_key">
+        <input id="tt-np-wval" placeholder="value or JSON" class="tt-input" value='{"status":"ok","count":1}'>
+        <button class="tt-run" data-action="writeNotepad">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Read Notepad</label>
+        <input id="tt-np-rkey" placeholder="key" class="tt-input tt-wide" value="test_key">
+        <button class="tt-run" data-action="readNotepad">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Clear Notepad</label>
+        <button class="tt-run" data-action="clearNotepad" style="margin-left:auto;">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Save Persistent</label>
+        <input id="tt-ps-skey" placeholder="key" class="tt-input tt-sm" value="persist_key">
+        <input id="tt-ps-sval" placeholder="value or JSON" class="tt-input" value='{"saved":true,"source":"tool-test"}'>
+        <button class="tt-run" data-action="savePersistent">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Load Persistent</label>
+        <input id="tt-ps-lkey" placeholder="key" class="tt-input tt-wide" value="persist_key">
+        <button class="tt-run" data-action="loadPersistent">Run</button>
+      </div>
+    </details>
+
+    <!-- Output Tools -->
+    <details class="tt-group">
+      <summary>Output Tools</summary>
+      <div class="tt-row">
+        <label>Generate Page</label>
+        <textarea id="tt-gp-data" placeholder='[{"name":"Item 1","price":"$10"}]' class="tt-input tt-textarea">[{"title":"Video A","views":"1.2M"},{"title":"Video B","views":"950K"}]</textarea>
+        <select id="tt-gp-template" class="tt-input tt-sm">
+          <option value="card-grid">card-grid</option>
+          <option value="comparison-table">comparison-table</option>
+          <option value="timeline">timeline</option>
+          <option value="summary">summary</option>
+        </select>
+        <button class="tt-run" data-action="generatePage">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Download File</label>
+        <textarea id="tt-dl-data" placeholder='[{"col1":"val1"}]' class="tt-input tt-textarea">[{"title":"Video A","url":"https://youtube.com"},{"title":"Video B","url":"https://youtube.com"}]</textarea>
+        <select id="tt-dl-fmt" class="tt-input tt-sm">
+          <option value="csv">CSV</option>
+          <option value="json">JSON</option>
+          <option value="markdown">Markdown</option>
+          <option value="html">HTML</option>
+          <option value="txt">TXT</option>
+        </select>
+        <input id="tt-dl-name" placeholder="filename" class="tt-input tt-sm" value="export">
+        <button class="tt-run" data-action="downloadFile">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Modify Site</label>
+        <select id="tt-ms-action" class="tt-input tt-sm">
+          <option value="hideElements">hideElements</option>
+          <option value="highlightElements">highlightElements</option>
+          <option value="injectCSS">injectCSS</option>
+          <option value="filterContent">filterContent</option>
+        </select>
+        <input id="tt-ms-params" placeholder='{"selectors":[".ad"]}' class="tt-input" value='{"selectors":["#masthead"]}'>
+        <button class="tt-run" data-action="modifySite">Run</button>
+      </div>
+    </details>
+
+    <!-- AI & Embeddings -->
+    <details class="tt-group">
+      <summary>AI & Embeddings</summary>
+      <div class="tt-row">
+        <label>Embed Text</label>
+        <input id="tt-embed-text" placeholder="text to embed" class="tt-input tt-wide" value="Top YouTube music videos this week">
+        <button class="tt-run" data-action="embedText">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Ask Ollama</label>
+        <input id="tt-ollama-prompt" placeholder="prompt for local LLM" class="tt-input tt-wide" value="Summarize why local LLM testing may fail when Ollama is offline.">
+        <button class="tt-run" data-action="askOllama">Run</button>
+      </div>
+    </details>
+
+    <!-- System -->
+    <details class="tt-group">
+      <summary>System</summary>
+      <div class="tt-row">
+        <label>List Tools</label>
+        <button class="tt-run" data-action="listTools" style="margin-left:auto;">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Use Tool</label>
+        <input id="tt-tool-name" placeholder="tool_name" class="tt-input" value="shared_notepad">
+        <input id="tt-tool-params" placeholder='{"param":"val"}' class="tt-input" value='{"action":"keys"}'>
+        <button class="tt-run" data-action="useTool">Run</button>
+      </div>
+      <div class="tt-row">
+        <label>Scheduler</label>
+        <input id="tt-scheduler-params" placeholder='{"action":"list"}' class="tt-input tt-wide" value='{"action":"create","functionName":"MySavedFunction","scheduleType":"domChange","domSelector":"body","domDebounceMs":1200,"runOnPageLoad":true,"runOnScroll":true,"triggerMode":"everyMatch"}'>
+        <button class="tt-run" data-action="scheduler">Run</button>
+      </div>
+    </details>
+  </div>
+
+  <div id="returnValueContainer" class="return-value-section" style="display: none;">
+    <h2>Return Value</h2>
+    <div id="returnValueOutput"></div>
+  </div>
+
+  <div class="logs-section">
+    <div class="logs-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>Logs</h2>
+      <button id="exportLogsBtn" class="secondary-btn" title="Save logs to file"
+        style="padding: 2px 8px; font-size: 12px;">💾 Export</button>
+    </div>
+    <div id="logsContainer">No activity yet.</div>
+  </div>
+
+  <div id="screenshotModal" class="modal">
+    <span class="close-modal-btn">&times;</span>
+    <img class="modal-content" id="screenshotImage">
+  </div>
+
+  <div id="codeEditorModal" class="modal">
+    <div class="modal-content code-editor-content">
+      <span class="close-editor-btn">&times;</span>
+      <h2>Edit Function Code</h2>
+      <div class="editor-container">
+        <textarea id="codeEditorTextarea" spellcheck="false"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="saveCodeBtn" class="primary-btn">Save Changes</button>
+        <button id="cancelCodeBtn" class="secondary-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="functionModelModal" class="modal">
+    <div class="modal-content model-editor-content">
+      <span class="close-model-btn">&times;</span>
+      <h2>Function Model Settings</h2>
+      <div class="model-editor-container">
+        <div class="model-editor-row">
+          <label>Function</label>
+          <div id="functionModelName" class="model-function-name">-</div>
+        </div>
+        <div class="model-editor-row">
+          <label for="functionAiProvider">AI Provider</label>
+          <select id="functionAiProvider">
+            <option value="default">Default (Global)</option>
+            <option value="gemini">Online Gemini API</option>
+            <option value="ollama">Local Ollama</option>
+          </select>
+        </div>
+        <div class="model-editor-row">
+          <label for="functionAiModel">AI Model</label>
+          <input id="functionAiModel" type="text" placeholder="e.g. gemini-3-flash-preview or gemma3:4b">
+        </div>
+        <div class="model-editor-row">
+          <label for="functionEmbeddingProvider">Embedding Provider</label>
+          <select id="functionEmbeddingProvider">
+            <option value="default">Default (Global)</option>
+            <option value="gemini">Online Gemini API</option>
+            <option value="ollama">Local Ollama</option>
+          </select>
+        </div>
+        <div class="model-editor-row">
+          <label for="functionEmbeddingModel">Embedding Model</label>
+          <input id="functionEmbeddingModel" type="text" placeholder="e.g. mxbai-embed-large">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="saveFunctionModelBtn" class="primary-btn">Save Model Settings</button>
+        <button id="cancelFunctionModelBtn" class="secondary-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="services/computerUseService.js"></script>
+  <script src="core/functionLibraryService.js"></script>
+  <script src="ai/ai-service.js"></script>
+  <script src="ai/aiTaskService.js"></script>
+  <!-- Tool System -->
+  <script src="core/toolRegistry.js"></script>
+  <script src="services/notepadService.js"></script>
+  <script src="services/ollamaService.js"></script>
+  <script src="services/embeddingService.js"></script>
+  <script src="services/fileSystemService.js"></script>
+  <script src="services/siteModifier.js"></script>
+  <script src="services/webpageGenerator.js"></script>
+  <script src="core/toolOrchestrator.js"></script>
+  <script src="ui/popup.js"></script>
+</body>
+
+</html>

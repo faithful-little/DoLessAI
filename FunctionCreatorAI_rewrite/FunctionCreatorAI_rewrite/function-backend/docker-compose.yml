@@ -1,0 +1,15 @@
+services:
+  function-backend:
+    build: .
+    container_name: function-backend
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      - PORT=8787
+      - DATA_DIR=/data
+    volumes:
+      - function_backend_data:/data
+
+volumes:
+  function_backend_data:
